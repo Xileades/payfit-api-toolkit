@@ -1,0 +1,13 @@
+﻿# API keys must never be committed
+tokens.json
+*.token
+.payfit/
+
+# Local execution cache
+lib/_cache/
+
+# OS / editors
+Thumbs.db
+desktop.ini
+*.swp
+.vscode/
