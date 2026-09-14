@@ -1,0 +1,9 @@
+{
+  "name": "payfit-api-toolkit",
+  "version": "0.1.0",
+  "description": "PowerShell library and Claude skill for the PayFit API with a customer API key: companies, collaborators, absences, payroll safety rules.",
+  "author": { "name": "Xileades" },
+  "homepage": "https://github.com/Xileades/payfit-api-toolkit",
+  "repository": "https://github.com/Xileades/payfit-api-toolkit",
+  "license": "MIT"
+}
