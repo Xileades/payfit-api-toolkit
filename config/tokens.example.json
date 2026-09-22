@@ -1,4 +1,4 @@
-﻿{
+{
   "_comment": "Copy to %USERPROFILE%\\.payfit\\tokens.json, then paste your keys. Never commit the filled file.",
   "_where_to_generate": "https://app.payfit.com/integrations/hub/api -> Create a key. Shown ONCE.",
   "_read_scopes": "collaborators:read, contracts:read, accounting:read, time:read, health-insurance:read",

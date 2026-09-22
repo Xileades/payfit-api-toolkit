@@ -1,4 +1,4 @@
-﻿---
+---
 name: payfit-access
 description: Access layer for the PayFit API (partner-api) using a customer API key - bootstrap, companies, pagination, rate limits, payroll safety rules. Load before any PayFit task.
 ---
