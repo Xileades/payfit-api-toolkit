@@ -18,13 +18,34 @@ If the library is shared from a network drive, copy it locally first: the
 share as the source of truth and the local copy as a cache overwritten at every
 run. Do **not** work around it by setting the policy to `Bypass`.
 
-If `pf-api.ps1` throws "tokens.json not found", point the user at the README.
-Never guess a key, never reuse someone else's, never print one.
+If `pf-api.ps1` throws "tokens.json not found", point the user at the README
+(`config/tokens.example.json`, or `config/config.example.json` if the keys are
+kept in Azure Key Vault). Never guess a key, never reuse someone else's, never
+print one, and **never ask the user to paste a key into the conversation**.
+
+If it throws a "Key Vault:" error, relay it **as is**: it names the secret and the
+likely cause (Windows not signed in with the work account, missing *Key Vault
+Secrets User* role). There is no fallback to `tokens.json` in that mode, and do
+not offer one by asking for a key in chat.
 
 ## 2. Companies and keys
 
-**One PayFit key is bound to one company.** Hence one entry per company in
-`%USERPROFILE%\.payfit\tokens.json`, never on a share, never in git.
+**One PayFit key is bound to one company.** Keys live in one of two places,
+chosen per user:
+
+- `%USERPROFILE%\.payfit\tokens.json` (default; `$env:PAYFIT_HOME` overrides the
+  folder): one entry per company, never on a share, never in git.
+- **Azure Key Vault**, when `%USERPROFILE%\.payfit\config.json` has
+  `"source": "keyvault"` (see `config/config.example.json`): one secret per company
+  and per person, read at run time into memory with the user's Windows sign-in.
+  `PFEntites` then lists the companies declared in `config.json`.
+
+The functions behave the same in both modes. **Key the vault with read-only
+keys:** issue the key that is stored in the vault without any `*:write` scope
+(`collaborators:read`, `contracts:read`, `accounting:read`, `time:read`,
+`health-insurance:read` are enough for everything here). A vault that holds
+write-capable payroll keys turns one compromised session into a write path to
+payslips and declarations.
 
 Keys are created at <https://app.payfit.com/integrations/hub/api> and are
 **displayed once**.
@@ -45,7 +66,7 @@ resolve the id themselves.
 
 | Function | Role |
 |---|---|
-| `PFEntites` | companies in tokens.json |
+| `PFEntites` | companies in tokens.json (or config.json in Key Vault mode) |
 | `PFMe $e` | introspection: company and scopes |
 | `PFCompanyId $e` | companyId, cached |
 | `PFGet $e $path $query` | single GET |

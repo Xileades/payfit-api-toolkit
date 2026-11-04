@@ -23,6 +23,8 @@ nothing.
 |---|---|
 | `lib/pf-api.ps1` | the client: auth, companyId resolution, pagination, throttling, bounded retry |
 | `config/tokens.example.json` | key file template, one entry per company |
+| `config/config.example.json` | optional: read the keys from Azure Key Vault instead |
+| `tests/` | offline tests of the key sources |
 | `docs/PITFALLS.md` | what the documentation does not say |
 | `skills/payfit-access/` | Claude skill wrapping the library |
 | `examples/` | ready-to-run scripts |
@@ -66,6 +68,35 @@ PFEntites                                    # declared companies
 (PFGetAll 'my-company' 'collaborators').Count
 ```
 
+### Optional: keys in Azure Key Vault instead of a file
+
+To keep keys off the disk, store them in an Azure Key Vault and read them **at
+run time, in memory**, with each person's own Windows sign-in (Entra ID, silent,
+no password):
+
+```powershell
+Copy-Item .\config\config.example.json "$env:USERPROFILE\.payfit\config.json"
+notepad "$env:USERPROFILE\.payfit\config.json"   # vault URL, app id, companies
+```
+
+`config.json` holds no secret. One secret per company and per person, named
+`payfit-token-{company}-{user}` by default (`{user}` is the part of the Windows
+sign-in before the `@`, letters and digits, lower case). Grant each person
+*Key Vault Secrets User* on their own secrets only. The app registration is a
+public client (no secret) with the delegated permission *Azure Key Vault /
+user_impersonation* and the redirect URI
+`ms-appx-web://microsoft.aad.brokerplugin/<clientId>`; the device must be
+Entra-joined or registered. See `docs/PITFALLS.md` for the broker trap.
+
+- **Store read-only keys.** Create the key you put in the vault without any
+  `*:write` scope. Then a leaked vault read can read payroll data but never
+  change a payslip or a contract.
+- Without `config.json` nothing changes: `tokens.json` is read as before.
+- In vault mode a failure throws a `Key Vault: ...` error. There is **no
+  fallback** to `tokens.json`.
+- `$env:PAYFIT_HOME` moves the whole `.payfit` folder (config and tokens).
+- Tests, no network: `pwsh -NoProfile -File tests/keyvault-source.tests.ps1`.
+
 ## Usage
 
 ```powershell
@@ -101,7 +132,7 @@ PFGetAll 'my-company' "collaborators/$collaboratorId/payslips"
 ## The multi-company model
 
 **One PayFit key is bound to one company.** There is no cross-company key.
-`tokens.json` therefore holds one entry per company, and every call names the
+`tokens.json` (or the vault, one secret per company) therefore holds one entry per company, and every call names the
 company it targets:
 
 ```powershell
