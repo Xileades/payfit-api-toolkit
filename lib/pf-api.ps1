@@ -155,10 +155,20 @@ function PFIntrospect {
     # (parametre `token`, RFC 7662). Le Bearer seul renvoie 400, le corps seul 401.
     # La doc PayFit ne le precise pas.
     $k = PFToken $e
-    Invoke-RestMethod -Uri $script:PFIntro -Method Post `
+    $r = Invoke-RestMethod -Uri $script:PFIntro -Method Post `
         -Headers @{ 'Authorization' = "Bearer $k" } `
         -ContentType 'application/x-www-form-urlencoded' `
         -Body @{ token = $k }
+    # A revoked or expired key does not fail: PayFit answers { active: false }
+    # with no company_id. Surface it instead of letting callers see an empty id.
+    # The message never contains the key itself.
+    if ($r.active -ne $true) {
+        throw "PayFit: API key for entity '$e' is inactive (revoked or expired). Issue a new key in PayFit and update its storage (Key Vault secret or tokens.json)."
+    }
+    if (-not $r.company_id) {
+        throw "PayFit: API key for entity '$e' is active but introspection returned no company_id."
+    }
+    $r
 }
 
 function PFCompanyId {
