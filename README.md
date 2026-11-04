@@ -88,9 +88,10 @@ user_impersonation* and the redirect URI
 `ms-appx-web://microsoft.aad.brokerplugin/<clientId>`; the device must be
 Entra-joined or registered. See `docs/PITFALLS.md` for the broker trap.
 
-- **Store read-only keys.** Create the key you put in the vault without any
-  `*:write` scope. Then a leaked vault read can read payroll data but never
-  change a payslip or a contract.
+- **Scopes.** The key stored in the vault carries the scopes its holder is
+  authorised to use. This client has no write helper today, and any write
+  remains subject to the approval rules in the skill (summarise and wait for
+  approval before the first write of a batch).
 - Without `config.json` nothing changes: `tokens.json` is read as before.
 - In vault mode a failure throws a `Key Vault: ...` error. There is **no
   fallback** to `tokens.json`.

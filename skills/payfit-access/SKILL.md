@@ -40,12 +40,9 @@ chosen per user:
   and per person, read at run time into memory with the user's Windows sign-in.
   `PFEntites` then lists the companies declared in `config.json`.
 
-The functions behave the same in both modes. **Key the vault with read-only
-keys:** issue the key that is stored in the vault without any `*:write` scope
-(`collaborators:read`, `contracts:read`, `accounting:read`, `time:read`,
-`health-insurance:read` are enough for everything here). A vault that holds
-write-capable payroll keys turns one compromised session into a write path to
-payslips and declarations.
+The functions behave the same in both modes. The key stored in the vault carries
+the scopes its holder is authorised to use. The client contains no write helper
+today, and any write remains subject to the approval rules in section 8.
 
 Keys are created at <https://app.payfit.com/integrations/hub/api> and are
 **displayed once**.
