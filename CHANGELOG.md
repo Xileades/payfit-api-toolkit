@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.1 - 2026-11-04
+
+Fix: a revoked or expired API key was reported as OK. PayFit's `/introspect`
+answers `{ "active": false }` without `company_id` for such a key, and `PFMe` /
+`PFCompanyId` returned it without error, so callers saw an empty company id.
+`PFIntrospect` now throws `PayFit: API key for entity '<slug>' is inactive
+(revoked or expired)...` when `active` is not true, and a distinct error when the
+key is active but `company_id` is missing. The message never contains the key,
+and nothing empty is cached. Offline tests added; `payfit-access` skill notes it.
+
 ## 1.1.0 - 2026-11-04
 
 New, optional: keys can be read from **Azure Key Vault** instead of `tokens.json`.

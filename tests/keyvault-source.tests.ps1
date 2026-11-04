@@ -57,6 +57,31 @@ try {
     $msg = $null; try { [void](PFToken 'company-a') } catch { $msg = $_.Exception.Message }
     Check 'vault failure: throws a "Key Vault:" error' ($msg -like 'Key Vault:*')
     Check 'vault failure: tokens.json (present) is NOT used as fallback' ($null -eq $script:PFTokens)
+
+# --- 4. Introspection: inactive key / missing company_id (HTTP replaced by a fake)
+Reset
+$script:PFCoIds = @{}
+$script:PFTokens = [pscustomobject]@{ 'company-a' = 'FAKE-KEY-A-NOT-A-SECRET' }
+$env:PAYFIT_HOME = Join-Path ([IO.Path]::GetTempPath()) ('pf-none-' + [guid]::NewGuid())   # no config.json: file mode
+function PFThrottle { }
+function Invoke-RestMethod { param($Uri, $Method, $Headers, $ContentType, $Body) $script:fakeReply }
+function TryMsg([scriptblock]$sb) { try { & $sb | Out-Null; return $null } catch { return $_.Exception.Message } }
+
+$script:fakeReply = [pscustomobject]@{ active = $true; company_id = 'co-123'; scope = 'x' }
+Check 'introspect: active key returns company_id' ((PFCompanyId 'company-a') -eq 'co-123' -and (PFMe 'company-a').company_id -eq 'co-123')
+
+$script:PFCoIds = @{}
+$script:fakeReply = [pscustomobject]@{ active = $false }
+$m1 = TryMsg { PFCompanyId 'company-a' }
+$m2 = TryMsg { PFMe 'company-a' }
+Check 'introspect: active=false throws "inactive" in PFCompanyId and PFMe' (($m1 -like '*inactive*') -and ($m2 -like '*inactive*'))
+Check 'introspect: message names the entity, never the key' (($m1 -like "*'company-a'*") -and ($m1 -notlike '*FAKE-KEY*') -and ($m2 -notlike '*FAKE-KEY*'))
+Check 'introspect: nothing cached for an inactive key' (-not $script:PFCoIds.ContainsKey('company-a'))
+
+$script:fakeReply = [pscustomobject]@{ active = $true }
+$m3 = TryMsg { PFCompanyId 'company-a' }
+Check 'introspect: active without company_id throws a distinct error' (($m3 -like '*no company_id*') -and ($m3 -notlike '*inactive*') -and ($m3 -notlike '*FAKE-KEY*'))
+Check 'introspect: empty company_id is not cached' (-not $script:PFCoIds.ContainsKey('company-a'))
 }
 finally {
     Remove-Item Env:PAYFIT_HOME -ErrorAction SilentlyContinue

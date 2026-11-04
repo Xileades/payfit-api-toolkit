@@ -55,6 +55,8 @@ PFEntites                        # available companies
 (PFMe 'my-company').scope        # confirms what the key may do
 ```
 
+An `inactive (revoked or expired)` error from `PFMe` / `PFCompanyId` means the key is dead: report it as is and ask for a new key. Never work around it or carry on with an empty company id.
+
 ## 3. Calling the API
 
 Base `https://partner-api.payfit.com`, header `Authorization: Bearer <key>`.
