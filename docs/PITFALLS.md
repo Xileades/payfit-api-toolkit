@@ -82,3 +82,26 @@ A key created with a generous set can carry `collaborators:write`,
 the ability to modify employees and contracts, on a payroll system. Check what
 you actually granted with `PFMe`, and reissue a read-only key if writing was
 never the intention.
+
+## Key Vault mode: the Windows broker returns "Success" with an empty token
+
+**Symptom.** With `"source": "keyvault"`, the Windows account broker (WAM)
+answers `Success`, yet the vault replies `401 Unauthorized` for every secret.
+
+**Cause.** A `WebTokenRequest` built with a v2 scope
+(`https://vault.azure.net/user_impersonation` or `/.default`) comes back
+`Success` with an **empty** token on the AAD account provider. The request must
+carry the v1 `resource` property (`https://vault.azure.net`) and an empty scope.
+In Windows PowerShell 5.1 that property cannot be set the obvious way
+(`$req.Properties.Add(...)` and `$req.Properties['resource'] = ...` fail on the
+WinRT map); only reflection through the interface works:
+
+```powershell
+[void][System.Collections.Generic.IDictionary[string, string]].GetMethod('Add').Invoke(
+    $req.Properties, @('resource', 'https://vault.azure.net'))
+```
+
+**Fix.** Already in `PFVaultToken`, which also throws on an empty token rather
+than letting a `401` look like a missing permission. If you adapt the code, keep
+both. The token is silent only for the account Windows is signed in with, on an
+Entra-joined or registered device.
